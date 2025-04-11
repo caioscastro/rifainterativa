@@ -32,7 +32,7 @@
       border: 2px solid #333;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      transition: 0.2s ease-in-out;
+      transition: all 0.2s ease;
     }
     .numero:hover {
       transform: scale(1.1);
@@ -40,16 +40,45 @@
     .vendido {
       background-color: red !important;
       color: white !important;
-      border-color: white !important;
-      box-shadow: 0 0 10px red;
+      border-color: darkred !important;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+      z-index: 1000;
+    }
+    .error-message {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff4444;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      display: none;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
 
+<div class="loading" id="loading">Carregando números da rifa...</div>
+<div class="error-message" id="errorMessage"></div>
+
 <div class="container">
   <img src="https://i.ibb.co/9mfXL8vR/Rifa-sem-numeros.jpg" alt="Rifa" class="rifa-bg">
-  <!-- Primeira até décima linha (100 círculos) -->
+  <!-- Números posicionados -->
   <div class="numero" data-valor="1" style="left: 106.00px; top: 374.00px;">1</div>
   <div class="numero" data-valor="2" style="left: 173.22px; top: 374.00px;">2</div>
   <div class="numero" data-valor="3" style="left: 240.44px; top: 374.00px;">3</div>
@@ -150,76 +179,87 @@
   <div class="numero" data-valor="98" style="left: 576.54px; top: 993.02px;">98</div>
   <div class="numero" data-valor="99" style="left: 643.76px; top: 993.02px;">99</div>
   <div class="numero" data-valor="100" style="left: 710.98px; top: 993.02px;">100</div>
-  
-
 </div>
 
 <script>
-  const numeros = document.querySelectorAll('.numero');
-  const estadoSalvo = JSON.parse(localStorage.getItem("numerosVendidos") || "{}");
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzlp-leCRpkQRB364dC2pNdd_qQ-WdeTKcW90PQcO3QWw1A6d00k_U0MZ-cY6XXFFYfw/exec";
 
-  numeros.forEach(num => {
-    const valor = num.dataset.valor;
-    if (estadoSalvo[valor]) {
-      num.classList.add('vendido');
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      showLoading(true);
+      
+      // Carrega dados da API
+      const response = await fetch(SCRIPT_URL);
+      
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      // Atualiza a interface
+      updateNumbersUI(data);
+      
+    } catch (error) {
+      showError("Erro ao carregar dados: " + error.message);
+      console.error("Erro detalhado:", error);
+    } finally {
+      showLoading(false);
     }
-    num.addEventListener('click', () => {
-      num.classList.toggle('vendido');
-      estadoSalvo[valor] = num.classList.contains('vendido');
-      localStorage.setItem("numerosVendidos", JSON.stringify(estadoSalvo));
-    });
+    
+    // Configura os eventos de clique
+    setupClickHandlers();
   });
-</script>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-<div style="text-align: center; margin-top: 20px;">
-  <button onclick="salvarComoImagem()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">
-    Salvar como Imagem
-  </button>
-</div>
-
-<script>
-  function salvarComoImagem() {
-    const container = document.querySelector(".container");
-    if (!container) {
-      alert("Conteúdo não encontrado!");
-      return;
-    }
-
-    html2canvas(container, {
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    }).then(canvas => {
-      canvas.toBlob(blob => {
-        if (!blob) {
-          alert("Erro ao gerar imagem.");
-          return;
-        }
-
-        const fileName = "rifa-marcada.png";
-
-        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "image/png" })] })) {
-          const file = new File([blob], fileName, { type: "image/png" });
-          navigator.share({
-            files: [file],
-            title: 'Minha Rifa',
-            text: 'Confira os números vendidos:',
-          }).catch(err => console.log("Compartilhamento cancelado ou falhou:", err));
-        } else {
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        }
-      }, "image/png");
-    }).catch(err => {
-      console.error("Erro ao gerar imagem:", err);
-      alert("Erro ao capturar imagem.");
+  function updateNumbersUI(data) {
+    document.querySelectorAll('.numero').forEach(num => {
+      const numero = num.dataset.valor;
+      num.classList.toggle('vendido', data[numero] === true);
     });
+  }
+
+  function setupClickHandlers() {
+    document.querySelectorAll('.numero').forEach(num => {
+      num.addEventListener('click', async () => {
+        const numero = num.dataset.valor;
+        const novoEstado = !num.classList.contains('vendido');
+        
+        // Atualização otimista da UI
+        num.classList.toggle('vendido', novoEstado);
+        
+        try {
+          // Envia para o servidor
+          const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ numero, vendido: novoEstado })
+          });
+          
+          if (!response.ok) {
+            throw new Error('Falha ao salvar');
+          }
+          
+        } catch (error) {
+          // Reverte a UI em caso de erro
+          num.classList.toggle('vendido');
+          showError("Erro ao salvar. Tente novamente.");
+          console.error("Erro ao salvar:", error);
+        }
+      });
+    });
+  }
+
+  function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
+  }
+
+  function showError(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 5000);
   }
 </script>
 
