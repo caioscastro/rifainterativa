@@ -48,6 +48,10 @@
       padding: 20px;
       font-size: 18px;
     }
+    .numero.atualizando {
+      opacity: 0.7;
+      cursor: wait;
+    }
   </style>
 </head>
 <body>
@@ -195,7 +199,43 @@
     loadingElement.style.display = 'none';
   }
   
-  // Faz a requisição para a API
+  // Função para atualizar o status na planilha
+  function atualizarStatusNoSheets(numero, vendido) {
+    const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
+    numeroElement.classList.add('atualizando');
+    
+    fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        numero: numero,
+        status: vendido ? "vendido" : ""
+      })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Erro na requisição");
+      return response.json();
+    })
+    .then(data => {
+      // Atualiza a interface após a resposta
+      if (vendido) {
+        numeroElement.classList.add('vendido');
+      } else {
+        numeroElement.classList.remove('vendido');
+      }
+    })
+    .catch(error => {
+      console.error("Erro ao atualizar número:", error);
+      alert("Erro ao atualizar o número. Recarregue a página e tente novamente.");
+    })
+    .finally(() => {
+      numeroElement.classList.remove('atualizando');
+    });
+  }
+  
+  // Faz a requisição inicial para a API
   fetch(API_URL)
     .then(response => {
       if (!response.ok) throw new Error("Erro na requisição");
@@ -214,6 +254,15 @@
       });
     });
 
+  // Adiciona evento de clique para marcar/desmarcar como vendido
+  numeros.forEach(num => {
+    num.addEventListener('click', () => {
+      const valor = num.dataset.valor;
+      const vendido = !num.classList.contains('vendido');
+      atualizarStatusNoSheets(valor, vendido);
+    });
+  });
+  
   // Opcional: Atualizar automaticamente a cada 30 segundos
   setInterval(() => {
     fetch(API_URL)
