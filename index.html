@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Rifa Interativa</title>
   <style>
-    /* Mantenha seus estilos existentes */
     body {
       background: #fefefe;
       font-family: sans-serif;
@@ -33,7 +32,7 @@
       border: 2px solid #333;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: 0.2s ease-in-out;
     }
     .numero:hover {
       transform: scale(1.1);
@@ -41,8 +40,8 @@
     .vendido {
       background-color: red !important;
       color: white !important;
-      border-color: darkred !important;
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      border-color: white !important;
+      box-shadow: 0 0 10px red;
     }
     .loading {
       position: fixed;
@@ -58,24 +57,11 @@
       font-size: 24px;
       z-index: 1000;
     }
-    .error-message {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ff4444;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 5px;
-      display: none;
-      z-index: 1000;
-    }
   </style>
 </head>
 <body>
 
-<div class="loading" id="loading">Carregando números da rifa...</div>
-<div class="error-message" id="errorMessage"></div>
+<div class="loading" id="loading">Carregando...</div>
 
 <div class="container">
   <img src="https://i.ibb.co/9mfXL8vR/Rifa-sem-numeros.jpg" alt="Rifa" class="rifa-bg">
@@ -182,122 +168,189 @@
   <div class="numero" data-valor="100" style="left: 710.98px; top: 993.02px;">100</div>
 </div>
 
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<div style="text-align: center; margin-top: 20px;">
+  <button onclick="salvarComoImagem()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">
+    Salvar como Imagem
+  </button>
+</div>
+
 <script>
-  // URL do seu Apps Script (mesma que você já tem)
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzlp-leCRpkQRB364dC2pNdd_qQ-WdeTKcW90PQcO3QWw1A6d00k_U0MZ-cY6XXFFYfw/exec";
+// Configurações - ATUALIZE ESTES VALORES!
+const REPO_OWNER = 'SEU_USUARIO_GITHUB';
+const REPO_NAME = 'SEU_REPOSITORIO';
+const GITHUB_TOKEN = 'SEU_TOKEN_GITHUB'; // Token com permissão repo
 
-// Função para carregar dados com CORS proxy
-async function loadWithCorsProxy(url) {
+// Elementos
+const numeros = document.querySelectorAll('.numero');
+const loadingElement = document.getElementById('loading');
+
+// Estado inicial
+let rifaData = {};
+
+// Função para mostrar/ocultar loading
+function showLoading(show) {
+  loadingElement.style.display = show ? 'flex' : 'none';
+}
+
+// Carrega os dados da rifa do GitHub
+async function loadRifaData() {
+  showLoading(true);
+  
   try {
-    // Tenta direto primeiro
-    const directResponse = await fetch(url, {
-      method: 'GET',
-      cache: 'no-cache',
-      headers: {
-        'Content-Type': 'application/json'
+    const response = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues?labels=rifa`,
+      {
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
       }
-    });
+    );
     
-    if (directResponse.ok) {
-      return await directResponse.json();
+    const issues = await response.json();
+    if (issues.length > 0) {
+      rifaData = JSON.parse(issues[0].body);
+      updateUI();
     }
-    
-    // Se falhar, tenta com proxy
-    const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-    const proxyResponse = await fetch(proxyUrl, {
-      method: 'GET',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!proxyResponse.ok) throw new Error('Failed with proxy');
-    return await proxyResponse.json();
-    
   } catch (error) {
-    console.error('Both direct and proxy failed:', error);
-    throw error;
-  }
-}
-
-// Carrega os números da rifa
-async function loadNumbers() {
-  try {
-    document.getElementById('loading').style.display = 'flex';
-    
-    const data = await loadWithCorsProxy(SCRIPT_URL);
-    
-    document.querySelectorAll('.numero').forEach(num => {
-      const numero = num.dataset.valor;
-      num.classList.toggle('vendido', data[numero] === true);
-    });
-    
-  } catch (error) {
-    console.error('Erro ao carregar:', error);
-    alert('Erro ao carregar dados. Recarregue a página.');
+    console.error("Erro ao carregar:", error);
+    alert("Erro ao carregar dados da rifa. Recarregue a página.");
   } finally {
-    document.getElementById('loading').style.display = 'none';
+    showLoading(false);
   }
 }
 
-// Salva um número
-async function saveNumber(numero, vendido) {
+// Atualiza a interface com os dados carregados
+function updateUI() {
+  numeros.forEach(num => {
+    const valor = num.dataset.valor;
+    num.classList.toggle('vendido', rifaData[valor] === true);
+  });
+}
+
+// Salva o estado de um número
+async function saveNumberState(numero, vendido) {
+  showLoading(true);
+  
   try {
-    // Tenta direto primeiro
-    const directResponse = await fetch(SCRIPT_URL, {
-      method: 'POST',
+    // Atualiza os dados localmente primeiro
+    rifaData[numero] = vendido;
+    
+    // Verifica se já existe um issue
+    const issuesResponse = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues?labels=rifa`,
+      {
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+    
+    const issues = await issuesResponse.json();
+    const issueNumber = issues.length > 0 ? issues[0].number : null;
+    
+    // URL e método dependendo se já existe issue
+    const url = issueNumber 
+      ? `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}`
+      : `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`;
+    
+    const method = issueNumber ? 'PATCH' : 'POST';
+    
+    // Envia para o GitHub
+    const saveResponse = await fetch(url, {
+      method: method,
       headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ numero, vendido })
+      body: JSON.stringify({
+        title: 'Dados da Rifa',
+        body: JSON.stringify(rifaData),
+        labels: ['rifa']
+      })
     });
     
-    if (directResponse.ok) return;
-    
-    // Se falhar, tenta com proxy
-    const proxyUrl = `https://cors-anywhere.herokuapp.com/${SCRIPT_URL}`;
-    const proxyResponse = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ numero, vendido })
-    });
-    
-    if (!proxyResponse.ok) throw new Error('Failed to save');
+    if (!saveResponse.ok) throw new Error('Erro ao salvar no GitHub');
     
   } catch (error) {
-    console.error('Erro ao salvar:', error);
+    console.error("Erro ao salvar:", error);
     throw error;
+  } finally {
+    showLoading(false);
   }
 }
 
-// Configura eventos
+// Configura os eventos de clique
 function setupEventListeners() {
-  document.querySelectorAll('.numero').forEach(num => {
+  numeros.forEach(num => {
     num.addEventListener('click', async () => {
       const numero = num.dataset.valor;
       const vendido = !num.classList.contains('vendido');
       
-      // Atualização otimista
+      // Atualização otimista da UI
       num.classList.toggle('vendido', vendido);
       
       try {
-        await saveNumber(numero, vendido);
+        await saveNumberState(numero, vendido);
       } catch (error) {
         // Reverte em caso de erro
         num.classList.toggle('vendido');
-        alert('Erro ao salvar. Tente novamente.');
+        alert("Erro ao salvar. Tente novamente.");
       }
     });
   });
 }
 
+// Função para salvar como imagem (mantida do original)
+function salvarComoImagem() {
+  const container = document.querySelector(".container");
+  if (!container) {
+    alert("Conteúdo não encontrado!");
+    return;
+  }
+
+  html2canvas(container, {
+    useCORS: true,
+    backgroundColor: "#ffffff"
+  }).then(canvas => {
+    canvas.toBlob(blob => {
+      if (!blob) {
+        alert("Erro ao gerar imagem.");
+        return;
+      }
+
+      const fileName = "rifa-marcada.png";
+
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "image/png" })] })) {
+        const file = new File([blob], fileName, { type: "image/png" });
+        navigator.share({
+          files: [file],
+          title: 'Minha Rifa',
+          text: 'Confira os números vendidos:',
+        }).catch(err => console.log("Compartilhamento cancelado ou falhou:", err));
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    }, "image/png");
+  }).catch(err => {
+    console.error("Erro ao gerar imagem:", err);
+    alert("Erro ao capturar imagem.");
+  });
+}
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
-  loadNumbers();
+  loadRifaData();
   setupEventListeners();
 });
 </script>
