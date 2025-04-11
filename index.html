@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Rifa Interativa</title>
   <style>
+    /* Mantenha seus estilos existentes */
     body {
       background: #fefefe;
       font-family: sans-serif;
@@ -50,7 +51,7 @@
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.7);
-      display: flex;
+      display: none;
       justify-content: center;
       align-items: center;
       color: white;
@@ -78,7 +79,7 @@
 
 <div class="container">
   <img src="https://i.ibb.co/9mfXL8vR/Rifa-sem-numeros.jpg" alt="Rifa" class="rifa-bg">
-  <!-- Números posicionados -->
+  <!-- Todos os números posicionados aqui -->
   <div class="numero" data-valor="1" style="left: 106.00px; top: 374.00px;">1</div>
   <div class="numero" data-valor="2" style="left: 173.22px; top: 374.00px;">2</div>
   <div class="numero" data-valor="3" style="left: 240.44px; top: 374.00px;">3</div>
@@ -182,14 +183,31 @@
 </div>
 
 <script>
+  // URL do seu Apps Script (mesma que você já tem)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzlp-leCRpkQRB364dC2pNdd_qQ-WdeTKcW90PQcO3QWw1A6d00k_U0MZ-cY6XXFFYfw/exec";
 
-  document.addEventListener('DOMContentLoaded', async () => {
+  // Função para mostrar/ocultar loading
+  function showLoading(show) {
+    document.getElementById('loading').style.display = show ? 'flex' : 'none';
+  }
+
+  // Função para mostrar erros
+  function showError(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 5000);
+  }
+
+  // Carrega os números do servidor
+  async function loadNumbers() {
     try {
       showLoading(true);
       
-      // Carrega dados da API
-      const response = await fetch(SCRIPT_URL);
+      // Adiciona timestamp para evitar cache
+      const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
       
       if (!response.ok) {
         throw new Error(`Erro HTTP: ${response.status}`);
@@ -198,26 +216,42 @@
       const data = await response.json();
       
       // Atualiza a interface
-      updateNumbersUI(data);
+      document.querySelectorAll('.numero').forEach(num => {
+        const numero = num.dataset.valor;
+        num.classList.toggle('vendido', data[numero] === true);
+      });
       
     } catch (error) {
-      showError("Erro ao carregar dados: " + error.message);
-      console.error("Erro detalhado:", error);
+      showError("Erro ao carregar dados. Recarregue a página.");
+      console.error("Erro ao carregar:", error);
     } finally {
       showLoading(false);
     }
-    
-    // Configura os eventos de clique
-    setupClickHandlers();
-  });
-
-  function updateNumbersUI(data) {
-    document.querySelectorAll('.numero').forEach(num => {
-      const numero = num.dataset.valor;
-      num.classList.toggle('vendido', data[numero] === true);
-    });
   }
 
+  // Salva o estado de um número
+  async function saveNumber(numero, vendido) {
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ numero, vendido })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao salvar');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+      throw error;
+    }
+  }
+
+  // Configura os eventos de clique
   function setupClickHandlers() {
     document.querySelectorAll('.numero').forEach(num => {
       num.addEventListener('click', async () => {
@@ -228,39 +262,21 @@
         num.classList.toggle('vendido', novoEstado);
         
         try {
-          // Envia para o servidor
-          const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ numero, vendido: novoEstado })
-          });
-          
-          if (!response.ok) {
-            throw new Error('Falha ao salvar');
-          }
-          
+          await saveNumber(numero, novoEstado);
         } catch (error) {
-          // Reverte a UI em caso de erro
+          // Reverte em caso de erro
           num.classList.toggle('vendido');
           showError("Erro ao salvar. Tente novamente.");
-          console.error("Erro ao salvar:", error);
         }
       });
     });
   }
 
-  function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'flex' : 'none';
-  }
-
-  function showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    setTimeout(() => {
-      errorElement.style.display = 'none';
-    }, 5000);
-  }
+  // Inicialização quando a página carrega
+  document.addEventListener('DOMContentLoaded', () => {
+    loadNumbers();
+    setupClickHandlers();
+  });
 </script>
 
 </body>
