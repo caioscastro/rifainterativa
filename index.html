@@ -43,6 +43,11 @@
       border-color: white !important;
       box-shadow: 0 0 10px red;
     }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
@@ -151,20 +156,89 @@
   <div class="numero" data-valor="99" style="left: 643.76px; top: 993.02px;">99</div>
   <div class="numero" data-valor="100" style="left: 710.98px; top: 993.02px;">100</div>
   
-
+  <div class="loading" id="loading">Carregando status dos números...</div>
 </div>
 
 <script>
-  const numeros = document.querySelectorAll('.numero');
+  // Substitua esta URL pela URL do seu Google Apps Script
+  const API_URL = "https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec";
+  
+  // Primeiro, verificamos o localStorage para carregamento rápido
   const estadoSalvo = JSON.parse(localStorage.getItem("numerosVendidos") || "{}");
-
+  const numeros = document.querySelectorAll('.numero');
+  const loadingElement = document.getElementById('loading');
+  
+  // Esconde os números enquanto carrega
+  numeros.forEach(num => num.style.visibility = 'hidden');
+  
+  // Função para atualizar o estado dos números
+  function atualizarNumeros(data) {
+    // Cria um objeto para mapear os números vendidos
+    const vendidosMap = {};
+    
+    data.forEach(item => {
+      if (item.status === "vendido") {
+        vendidosMap[item.numero] = true;
+      }
+    });
+    
+    // Atualiza a interface
+    numeros.forEach(num => {
+      const valor = num.dataset.valor;
+      if (vendidosMap[valor]) {
+        num.classList.add('vendido');
+      }
+      num.style.visibility = 'visible';
+    });
+    
+    // Esconde o loading
+    loadingElement.style.display = 'none';
+    
+    // Salva no localStorage para cache
+    localStorage.setItem("numerosVendidos", JSON.stringify(vendidosMap));
+    localStorage.setItem("ultimaAtualizacao", new Date().getTime());
+  }
+  
+  // Tenta carregar do cache primeiro (se não for muito antigo)
+  const ultimaAtualizacao = localStorage.getItem("ultimaAtualizacao");
+  const umaHora = 60 * 60 * 1000; // 1 hora em milissegundos
+  
+  if (estadoSalvo && ultimaAtualizacao && (new Date().getTime() - ultimaAtualizacao < umaHora)) {
+    atualizarNumeros(Object.keys(estadoSalvo).map(num => ({
+      numero: num,
+      status: "vendido"
+    })));
+  } else {
+    // Faz a requisição para a API
+    fetch(API_URL)
+      .then(response => {
+        if (!response.ok) throw new Error("Erro na requisição");
+        return response.json();
+      })
+      .then(data => {
+        atualizarNumeros(data);
+      })
+      .catch(error => {
+        console.error("Erro ao carregar dados:", error);
+        loadingElement.textContent = "Erro ao carregar os dados. Recarregue a página.";
+        
+        // Mostra os números mesmo com erro (usando cache se existir)
+        numeros.forEach(num => {
+          const valor = num.dataset.valor;
+          if (estadoSalvo[valor]) {
+            num.classList.add('vendido');
+          }
+          num.style.visibility = 'visible';
+        });
+      });
+  }
+  
+  // Mantém o clique para marcar/desmarcar (apenas para demonstração)
+  // Na implementação real, você provavelmente removeria isso ou usaria para outra finalidade
   numeros.forEach(num => {
-    const valor = num.dataset.valor;
-    if (estadoSalvo[valor]) {
-      num.classList.add('vendido');
-    }
     num.addEventListener('click', () => {
       num.classList.toggle('vendido');
+      const valor = num.dataset.valor;
       estadoSalvo[valor] = num.classList.contains('vendido');
       localStorage.setItem("numerosVendidos", JSON.stringify(estadoSalvo));
     });
@@ -222,35 +296,6 @@
     });
   }
 </script>
-
-<script>
-  // URL do Google Apps Script (já publicada como Web App)
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec';
-
-  // Função para marcar números como vendidos
-  function marcarVendidos(numerosVendidos) {
-    const elementos = document.querySelectorAll('.numero');
-    elementos.forEach(el => {
-      const valor = parseInt(el.getAttribute('data-valor'));
-      if (numerosVendidos.includes(valor)) {
-        el.classList.add('vendido');
-      }
-    });
-  }
-
-  // Buscar dados da planilha
-  fetch(scriptURL)
-    .then(response => response.json())
-    .then(data => {
-      // Supondo que os números vendidos estão em uma coluna chamada "numero" (ajuste conforme sua planilha)
-      const vendidos = data.map(item => parseInt(item.numero));
-      marcarVendidos(vendidos);
-    })
-    .catch(error => {
-      console.error('Erro ao buscar dados:', error);
-    });
-</script>
-
 
 </body>
 </html>
