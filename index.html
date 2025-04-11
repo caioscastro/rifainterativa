@@ -203,14 +203,13 @@
   function atualizarStatusNoSheets(numero, vendido) {
   const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
   if (!numeroElement) return;
-  
+
   numeroElement.classList.add('atualizando');
-  
-  // Adiciona um parâmetro origin à URL
+
   const url = new URL(API_URL);
-  url.searchParams.append('origin', window.location.origin);
-  
-  fetch(url.toString(), {
+  url.searchParams.set('origin', window.location.origin || 'https://caioscastro.github.io');
+
+  fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -218,20 +217,21 @@
     body: JSON.stringify({
       numero: numero.toString(),
       status: vendido ? "vendido" : ""
-    })
+    }),
+    redirect: 'follow' // Importante para Google Apps Script
   })
   .then(response => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     return response.json();
   })
   .then(data => {
-    if (data.error) throw new Error(data.message);
+    if (data && data.error) throw new Error(data.message);
     numeroElement.classList.toggle('vendido', vendido);
   })
   .catch(error => {
     console.error("Erro ao atualizar número:", error);
-    numeroElement.classList.toggle('vendido'); // Reverte a mudança visual
-    alert(`Erro ao atualizar número ${numero}: ${error.message}`);
+    alert(`Erro: ${error.message}\n\nRecarregue a página e tente novamente.`);
+    numeroElement.classList.remove('vendido');
   })
   .finally(() => {
     numeroElement.classList.remove('atualizando');
