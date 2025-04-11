@@ -163,8 +163,6 @@
   // Substitua esta URL pela URL do seu Google Apps Script
   const API_URL = "https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec";
   
-  // Primeiro, verificamos o localStorage para carregamento rápido
-  const estadoSalvo = JSON.parse(localStorage.getItem("numerosVendidos") || "{}");
   const numeros = document.querySelectorAll('.numero');
   const loadingElement = document.getElementById('loading');
   
@@ -187,29 +185,37 @@
       const valor = num.dataset.valor;
       if (vendidosMap[valor]) {
         num.classList.add('vendido');
+      } else {
+        num.classList.remove('vendido');
       }
       num.style.visibility = 'visible';
     });
     
     // Esconde o loading
     loadingElement.style.display = 'none';
-    
-    // Salva no localStorage para cache
-    localStorage.setItem("numerosVendidos", JSON.stringify(vendidosMap));
-    localStorage.setItem("ultimaAtualizacao", new Date().getTime());
   }
   
-  // Tenta carregar do cache primeiro (se não for muito antigo)
-  const ultimaAtualizacao = localStorage.getItem("ultimaAtualizacao");
-  const umaHora = 60 * 60 * 1000; // 1 hora em milissegundos
-  
-  if (estadoSalvo && ultimaAtualizacao && (new Date().getTime() - ultimaAtualizacao < umaHora)) {
-    atualizarNumeros(Object.keys(estadoSalvo).map(num => ({
-      numero: num,
-      status: "vendido"
-    })));
-  } else {
-    // Faz a requisição para a API
+  // Faz a requisição para a API
+  fetch(API_URL)
+    .then(response => {
+      if (!response.ok) throw new Error("Erro na requisição");
+      return response.json();
+    })
+    .then(data => {
+      atualizarNumeros(data);
+    })
+    .catch(error => {
+      console.error("Erro ao carregar dados:", error);
+      loadingElement.textContent = "Erro ao carregar os dados. Recarregue a página.";
+      
+      // Mostra os números mesmo com erro
+      numeros.forEach(num => {
+        num.style.visibility = 'visible';
+      });
+    });
+
+  // Opcional: Atualizar automaticamente a cada 30 segundos
+  setInterval(() => {
     fetch(API_URL)
       .then(response => {
         if (!response.ok) throw new Error("Erro na requisição");
@@ -219,30 +225,9 @@
         atualizarNumeros(data);
       })
       .catch(error => {
-        console.error("Erro ao carregar dados:", error);
-        loadingElement.textContent = "Erro ao carregar os dados. Recarregue a página.";
-        
-        // Mostra os números mesmo com erro (usando cache se existir)
-        numeros.forEach(num => {
-          const valor = num.dataset.valor;
-          if (estadoSalvo[valor]) {
-            num.classList.add('vendido');
-          }
-          num.style.visibility = 'visible';
-        });
+        console.error("Erro ao atualizar dados:", error);
       });
-  }
-  
-  // Mantém o clique para marcar/desmarcar (apenas para demonstração)
-  // Na implementação real, você provavelmente removeria isso ou usaria para outra finalidade
-  numeros.forEach(num => {
-    num.addEventListener('click', () => {
-      num.classList.toggle('vendido');
-      const valor = num.dataset.valor;
-      estadoSalvo[valor] = num.classList.contains('vendido');
-      localStorage.setItem("numerosVendidos", JSON.stringify(estadoSalvo));
-    });
-  });
+  }, 30000); // 30 segundos
 </script>
 
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
