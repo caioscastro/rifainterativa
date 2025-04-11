@@ -186,97 +186,120 @@
   // URL do seu Apps Script (mesma que você já tem)
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzlp-leCRpkQRB364dC2pNdd_qQ-WdeTKcW90PQcO3QWw1A6d00k_U0MZ-cY6XXFFYfw/exec";
 
-  // Função para mostrar/ocultar loading
-  function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'flex' : 'none';
-  }
-
-  // Função para mostrar erros
-  function showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    setTimeout(() => {
-      errorElement.style.display = 'none';
-    }, 5000);
-  }
-
-  // Carrega os números do servidor
-  async function loadNumbers() {
-    try {
-      showLoading(true);
-      
-      // Adiciona timestamp para evitar cache
-      const response = await fetch(`${SCRIPT_URL}?t=${Date.now()}`);
-      
-      if (!response.ok) {
-        throw new Error(`Erro HTTP: ${response.status}`);
+// Função para carregar dados com CORS proxy
+async function loadWithCorsProxy(url) {
+  try {
+    // Tenta direto primeiro
+    const directResponse = await fetch(url, {
+      method: 'GET',
+      cache: 'no-cache',
+      headers: {
+        'Content-Type': 'application/json'
       }
-      
-      const data = await response.json();
-      
-      // Atualiza a interface
-      document.querySelectorAll('.numero').forEach(num => {
-        const numero = num.dataset.valor;
-        num.classList.toggle('vendido', data[numero] === true);
-      });
-      
-    } catch (error) {
-      showError("Erro ao carregar dados. Recarregue a página.");
-      console.error("Erro ao carregar:", error);
-    } finally {
-      showLoading(false);
-    }
-  }
-
-  // Salva o estado de um número
-  async function saveNumber(numero, vendido) {
-    try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ numero, vendido })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Falha ao salvar');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error("Erro ao salvar:", error);
-      throw error;
-    }
-  }
-
-  // Configura os eventos de clique
-  function setupClickHandlers() {
-    document.querySelectorAll('.numero').forEach(num => {
-      num.addEventListener('click', async () => {
-        const numero = num.dataset.valor;
-        const novoEstado = !num.classList.contains('vendido');
-        
-        // Atualização otimista da UI
-        num.classList.toggle('vendido', novoEstado);
-        
-        try {
-          await saveNumber(numero, novoEstado);
-        } catch (error) {
-          // Reverte em caso de erro
-          num.classList.toggle('vendido');
-          showError("Erro ao salvar. Tente novamente.");
-        }
-      });
     });
+    
+    if (directResponse.ok) {
+      return await directResponse.json();
+    }
+    
+    // Se falhar, tenta com proxy
+    const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+    const proxyResponse = await fetch(proxyUrl, {
+      method: 'GET',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!proxyResponse.ok) throw new Error('Failed with proxy');
+    return await proxyResponse.json();
+    
+  } catch (error) {
+    console.error('Both direct and proxy failed:', error);
+    throw error;
   }
+}
 
-  // Inicialização quando a página carrega
-  document.addEventListener('DOMContentLoaded', () => {
-    loadNumbers();
-    setupClickHandlers();
+// Carrega os números da rifa
+async function loadNumbers() {
+  try {
+    document.getElementById('loading').style.display = 'flex';
+    
+    const data = await loadWithCorsProxy(SCRIPT_URL);
+    
+    document.querySelectorAll('.numero').forEach(num => {
+      const numero = num.dataset.valor;
+      num.classList.toggle('vendido', data[numero] === true);
+    });
+    
+  } catch (error) {
+    console.error('Erro ao carregar:', error);
+    alert('Erro ao carregar dados. Recarregue a página.');
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+// Salva um número
+async function saveNumber(numero, vendido) {
+  try {
+    // Tenta direto primeiro
+    const directResponse = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ numero, vendido })
+    });
+    
+    if (directResponse.ok) return;
+    
+    // Se falhar, tenta com proxy
+    const proxyUrl = `https://cors-anywhere.herokuapp.com/${SCRIPT_URL}`;
+    const proxyResponse = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ numero, vendido })
+    });
+    
+    if (!proxyResponse.ok) throw new Error('Failed to save');
+    
+  } catch (error) {
+    console.error('Erro ao salvar:', error);
+    throw error;
+  }
+}
+
+// Configura eventos
+function setupEventListeners() {
+  document.querySelectorAll('.numero').forEach(num => {
+    num.addEventListener('click', async () => {
+      const numero = num.dataset.valor;
+      const vendido = !num.classList.contains('vendido');
+      
+      // Atualização otimista
+      num.classList.toggle('vendido', vendido);
+      
+      try {
+        await saveNumber(numero, vendido);
+      } catch (error) {
+        // Reverte em caso de erro
+        num.classList.toggle('vendido');
+        alert('Erro ao salvar. Tente novamente.');
+      }
+    });
   });
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+  loadNumbers();
+  setupEventListeners();
+});
 </script>
 
 </body>
