@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Rifa Interativa</title>
+  <style>
+    body {
+      background: #fefefe;
+      font-family: sans-serif;
+    }
+    .container {
+      position: relative;
+      width: 864px;
+      margin: auto;
+    }
+    .rifa-bg {
+      width: 100%;
+      display: block;
+    }
+    .numero {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 24px;
+      color: black;
+      background-color: rgba(255, 255, 255, 0.8);
+      border: 2px solid #333;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      transition: 0.2s ease-in-out;
+    }
+    .numero:hover {
+      transform: scale(1.1);
+    }
+    .vendido {
+      background-color: red !important;
+      color: white !important;
+      border-color: white !important;
+      box-shadow: 0 0 10px red;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <img src="https://i.ibb.co/9mfXL8vR/Rifa-sem-numeros.jpg" alt="Rifa" class="rifa-bg">
+  <div class="numero" data-valor="201" style="left: 106.00px; top: 374.00px;">201</div>
+  <div class="numero" data-valor="202" style="left: 173.22px; top: 374.00px;">202</div>
+  <div class="numero" data-valor="203" style="left: 240.44px; top: 374.00px;">203</div>
+  <div class="numero" data-valor="204" style="left: 307.66px; top: 374.00px;">204</div>
+  <div class="numero" data-valor="205" style="left: 374.88px; top: 374.00px;">205</div>
+  <div class="numero" data-valor="206" style="left: 442.10px; top: 374.00px;">206</div>
+  <div class="numero" data-valor="207" style="left: 509.32px; top: 374.00px;">207</div>
+  <div class="numero" data-valor="208" style="left: 576.54px; top: 374.00px;">208</div>
+  <div class="numero" data-valor="209" style="left: 643.76px; top: 374.00px;">209</div>
+  <div class="numero" data-valor="210" style="left: 710.98px; top: 374.00px;">210</div>
+  <div class="numero" data-valor="211" style="left: 106.00px; top: 442.78px;">211</div>
+  <div class="numero" data-valor="212" style="left: 173.22px; top: 442.78px;">212</div>
+  <div class="numero" data-valor="213" style="left: 240.44px; top: 442.78px;">213</div>
+  <div class="numero" data-valor="214" style="left: 307.66px; top: 442.78px;">214</div>
+  <div class="numero" data-valor="215" style="left: 374.88px; top: 442.78px;">215</div>
+  <div class="numero" data-valor="216" style="left: 442.10px; top: 442.78px;">216</div>
+  <div class="numero" data-valor="217" style="left: 509.32px; top: 442.78px;">217</div>
+  <div class="numero" data-valor="218" style="left: 576.54px; top: 442.78px;">218</div>
+  <div class="numero" data-valor="219" style="left: 643.76px; top: 442.78px;">219</div>
+  <div class="numero" data-valor="220" style="left: 710.98px; top: 442.78px;">220</div>
+  <div class="numero" data-valor="221" style="left: 106.00px; top: 511.56px;">221</div>
+  <div class="numero" data-valor="222" style="left: 173.22px; top: 511.56px;">222</div>
+  <div class="numero" data-valor="223" style="left: 240.44px; top: 511.56px;">223</div>
+  <div class="numero" data-valor="224" style="left: 307.66px; top: 511.56px;">224</div>
+  <div class="numero" data-valor="225" style="left: 374.88px; top: 511.56px;">225</div>
+  <div class="numero" data-valor="226" style="left: 442.10px; top: 511.56px;">226</div>
+  <div class="numero" data-valor="227" style="left: 509.32px; top: 511.56px;">227</div>
+  <div class="numero" data-valor="228" style="left: 576.54px; top: 511.56px;">228</div>
+  <div class="numero" data-valor="229" style="left: 643.76px; top: 511.56px;">229</div>
+  <div class="numero" data-valor="230" style="left: 710.98px; top: 511.56px;">230</div>
+  <div class="numero" data-valor="231" style="left: 106.00px; top: 580.34px;">231</div>
+  <div class="numero" data-valor="232" style="left: 173.22px; top: 580.34px;">232</div>
+  <div class="numero" data-valor="233" style="left: 240.44px; top: 580.34px;">233</div>
+  <div class="numero" data-valor="234" style="left: 307.66px; top: 580.34px;">234</div>
+  <div class="numero" data-valor="235" style="left: 374.88px; top: 580.34px;">235</div>
+  <div class="numero" data-valor="236" style="left: 442.10px; top: 580.34px;">236</div>
+  <div class="numero" data-valor="237" style="left: 509.32px; top: 580.34px;">237</div>
+  <div class="numero" data-valor="238" style="left: 576.54px; top: 580.34px;">238</div>
+  <div class="numero" data-valor="239" style="left: 643.76px; top: 580.34px;">239</div>
+  <div class="numero" data-valor="240" style="left: 710.98px; top: 580.34px;">240</div>
+  <div class="numero" data-valor="241" style="left: 106.00px; top: 649.12px;">241</div>
+  <div class="numero" data-valor="242" style="left: 173.22px; top: 649.12px;">242</div>
+  <div class="numero" data-valor="243" style="left: 240.44px; top: 649.12px;">243</div>
+  <div class="numero" data-valor="244" style="left: 307.66px; top: 649.12px;">244</div>
+  <div class="numero" data-valor="245" style="left: 374.88px; top: 649.12px;">245</div>
+  <div class="numero" data-valor="246" style="left: 442.10px; top: 649.12px;">246</div>
+  <div class="numero" data-valor="247" style="left: 509.32px; top: 649.12px;">247</div>
+  <div class="numero" data-valor="248" style="left: 576.54px; top: 649.12px;">248</div>
+  <div class="numero" data-valor="249" style="left: 643.76px; top: 649.12px;">249</div>
+  <div class="numero" data-valor="250" style="left: 710.98px; top: 649.12px;">250</div>
+  <div class="numero" data-valor="251" style="left: 106.00px; top: 717.90px;">251</div>
+  <div class="numero" data-valor="252" style="left: 173.22px; top: 717.90px;">252</div>
+  <div class="numero" data-valor="253" style="left: 240.44px; top: 717.90px;">253</div>
+  <div class="numero" data-valor="254" style="left: 307.66px; top: 717.90px;">254</div>
+  <div class="numero" data-valor="255" style="left: 374.88px; top: 717.90px;">255</div>
+  <div class="numero" data-valor="256" style="left: 442.10px; top: 717.90px;">256</div>
+  <div class="numero" data-valor="257" style="left: 509.32px; top: 717.90px;">257</div>
+  <div class="numero" data-valor="258" style="left: 576.54px; top: 717.90px;">258</div>
+  <div class="numero" data-valor="259" style="left: 643.76px; top: 717.90px;">259</div>
+  <div class="numero" data-valor="260" style="left: 710.98px; top: 717.90px;">260</div>
+  <div class="numero" data-valor="261" style="left: 106.00px; top: 786.68px;">261</div>
+  <div class="numero" data-valor="262" style="left: 173.22px; top: 786.68px;">262</div>
+  <div class="numero" data-valor="263" style="left: 240.44px; top: 786.68px;">263</div>
+  <div class="numero" data-valor="264" style="left: 307.66px; top: 786.68px;">264</div>
+  <div class="numero" data-valor="265" style="left: 374.88px; top: 786.68px;">265</div>
+  <div class="numero" data-valor="266" style="left: 442.10px; top: 786.68px;">266</div>
+  <div class="numero" data-valor="267" style="left: 509.32px; top: 786.68px;">267</div>
+  <div class="numero" data-valor="268" style="left: 576.54px; top: 786.68px;">268</div>
+  <div class="numero" data-valor="269" style="left: 643.76px; top: 786.68px;">269</div>
+  <div class="numero" data-valor="270" style="left: 710.98px; top: 786.68px;">270</div>
+  <div class="numero" data-valor="271" style="left: 106.00px; top: 855.46px;">271</div>
+  <div class="numero" data-valor="272" style="left: 173.22px; top: 855.46px;">272</div>
+  <div class="numero" data-valor="273" style="left: 240.44px; top: 855.46px;">273</div>
+  <div class="numero" data-valor="274" style="left: 307.66px; top: 855.46px;">274</div>
+  <div class="numero" data-valor="275" style="left: 374.88px; top: 855.46px;">275</div>
+  <div class="numero" data-valor="276" style="left: 442.10px; top: 855.46px;">276</div>
+  <div class="numero" data-valor="277" style="left: 509.32px; top: 855.46px;">277</div>
+  <div class="numero" data-valor="278" style="left: 576.54px; top: 855.46px;">278</div>
+  <div class="numero" data-valor="279" style="left: 643.76px; top: 855.46px;">279</div>
+  <div class="numero" data-valor="280" style="left: 710.98px; top: 855.46px;">280</div>
+  <div class="numero" data-valor="281" style="left: 106.00px; top: 924.24px;">281</div>
+  <div class="numero" data-valor="282" style="left: 173.22px; top: 924.24px;">282</div>
+  <div class="numero" data-valor="283" style="left: 240.44px; top: 924.24px;">283</div>
+  <div class="numero" data-valor="284" style="left: 307.66px; top: 924.24px;">284</div>
+  <div class="numero" data-valor="285" style="left: 374.88px; top: 924.24px;">285</div>
+  <div class="numero" data-valor="286" style="left: 442.10px; top: 924.24px;">286</div>
+  <div class="numero" data-valor="287" style="left: 509.32px; top: 924.24px;">287</div>
+  <div class="numero" data-valor="288" style="left: 576.54px; top: 924.24px;">288</div>
+  <div class="numero" data-valor="289" style="left: 643.76px; top: 924.24px;">289</div>
+  <div class="numero" data-valor="290" style="left: 710.98px; top: 924.24px;">290</div>
+  <div class="numero" data-valor="291" style="left: 106.00px; top: 993.02px;">291</div>
+  <div class="numero" data-valor="292" style="left: 173.22px; top: 993.02px;">292</div>
+  <div class="numero" data-valor="293" style="left: 240.44px; top: 993.02px;">293</div>
+  <div class="numero" data-valor="294" style="left: 307.66px; top: 993.02px;">294</div>
+  <div class="numero" data-valor="295" style="left: 374.88px; top: 993.02px;">295</div>
+  <div class="numero" data-valor="296" style="left: 442.10px; top: 993.02px;">296</div>
+  <div class="numero" data-valor="297" style="left: 509.32px; top: 993.02px;">297</div>
+  <div class="numero" data-valor="298" style="left: 576.54px; top: 993.02px;">298</div>
+  <div class="numero" data-valor="299" style="left: 643.76px; top: 993.02px;">299</div>
+  <div class="numero" data-valor="300" style="left: 710.98px; top: 993.02px;">300</div>
+  
+  <div class="loading" id="loading">Carregando status dos números...</div>
+</div>
+
+<script>
+  // Substitua esta URL pela URL do seu Google Apps Script
+  const API_URL = "https://script.google.com/macros/s/AKfycbxNXM_nJ04hGbJqpXis_n-liIg-HfoIqVupBCVqicY9FY5q0P5w5BffQTddQYB1f7TJmA/exec";
+  
+  const numeros = document.querySelectorAll('.numero');
+  const loadingElement = document.getElementById('loading');
+  
+  // Esconde os números enquanto carrega
+  numeros.forEach(num => num.style.visibility = 'hidden');
+  
+  // Função para atualizar o estado dos números
+  function atualizarNumeros(data) {
+    // Cria um objeto para mapear os números vendidos
+    const vendidosMap = {};
+    
+    data.forEach(item => {
+      if (item.status === "vendido") {
+        vendidosMap[item.numero] = true;
+      }
+    });
+    
+    // Atualiza a interface
+    numeros.forEach(num => {
+      const valor = num.dataset.valor;
+      if (vendidosMap[valor]) {
+        num.classList.add('vendido');
+      } else {
+        num.classList.remove('vendido');
+      }
+      num.style.visibility = 'visible';
+    });
+    
+    // Esconde o loading
+    loadingElement.style.display = 'none';
+  }
+  
+  // Faz a requisição para a API
+  fetch(API_URL)
+    .then(response => {
+      if (!response.ok) throw new Error("Erro na requisição");
+      return response.json();
+    })
+    .then(data => {
+      atualizarNumeros(data);
+    })
+    .catch(error => {
+      console.error("Erro ao carregar dados:", error);
+      loadingElement.textContent = "Erro ao carregar os dados. Recarregue a página.";
+      
+      // Mostra os números mesmo com erro
+      numeros.forEach(num => {
+        num.style.visibility = 'visible';
+      });
+    });
+
+  // Opcional: Atualizar automaticamente a cada 30 segundos
+  setInterval(() => {
+    fetch(API_URL)
+      .then(response => {
+        if (!response.ok) throw new Error("Erro na requisição");
+        return response.json();
+      })
+      .then(data => {
+        atualizarNumeros(data);
+      })
+      .catch(error => {
+        console.error("Erro ao atualizar dados:", error);
+      });
+  }, 30000); // 30 segundos
+</script>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<div style="text-align: center; margin-top: 20px;">
+  <button onclick="salvarComoImagem()" style="padding: 10px 20px; font-size: 18px; cursor: pointer;">
+    Salvar como Imagem
+  </button>
+</div>
+
+<script>
+  function salvarComoImagem() {
+    const container = document.querySelector(".container");
+    if (!container) {
+      alert("Conteúdo não encontrado!");
+      return;
+    }
+
+    html2canvas(container, {
+      useCORS: true,
+      backgroundColor: "#ffffff"
+    }).then(canvas => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          alert("Erro ao gerar imagem.");
+          return;
+        }
+
+        const fileName = "rifa-marcada.png";
+
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "image/png" })] })) {
+          const file = new File([blob], fileName, { type: "image/png" });
+          navigator.share({
+            files: [file],
+            title: 'Minha Rifa',
+            text: 'Confira os números vendidos:',
+          }).catch(err => console.log("Compartilhamento cancelado ou falhou:", err));
+        } else {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }, "image/png");
+    }).catch(err => {
+      console.error("Erro ao gerar imagem:", err);
+      alert("Erro ao capturar imagem.");
+    });
+  }
+</script>
+
+</body>
+</html>
