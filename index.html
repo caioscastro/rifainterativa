@@ -165,77 +165,49 @@
 
 <script>
   // Substitua esta URL pela URL do seu Google Apps Script
-  const API_URL = "https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec";
-  
-  const numeros = document.querySelectorAll('.numero');
-  const loadingElement = document.getElementById('loading');
-  
-  // Esconde os números enquanto carrega
-  numeros.forEach(num => num.style.visibility = 'hidden');
-  
-  // Função para atualizar o estado dos números
-  function atualizarNumeros(data) {
-    // Cria um objeto para mapear os números vendidos
-    const vendidosMap = {};
-    
-    data.forEach(item => {
-      if (item.status === "vendido") {
-        vendidosMap[item.numero] = true;
-      }
-    });
-    
-    // Atualiza a interface
-    numeros.forEach(num => {
-      const valor = num.dataset.valor;
-      if (vendidosMap[valor]) {
-        num.classList.add('vendido');
-      } else {
-        num.classList.remove('vendido');
-      }
-      num.style.visibility = 'visible';
-    });
-    
-    // Esconde o loading
-    loadingElement.style.display = 'none';
-  }
-  
-  // Função para atualizar o status na planilha
-  function atualizarStatusNoSheets(numero, vendido) {
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec';
+
+async function atualizarStatusNoSheets(numero, vendido) {
   const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
   if (!numeroElement) return;
-
+  
   numeroElement.classList.add('atualizando');
-
-  const url = new URL(API_URL);
-  url.searchParams.set('origin', window.location.origin || 'https://caioscastro.github.io');
-
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      numero: numero.toString(),
-      status: vendido ? "vendido" : ""
-    }),
-    redirect: 'follow' // Importante para Google Apps Script
-  })
-  .then(response => {
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    return response.json();
-  })
-  .then(data => {
-    if (data && data.error) throw new Error(data.message);
+  
+  try {
+    const url = new URL(API_URL);
+    url.searchParams.set('origin', window.location.origin);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        numero: numero.toString(),
+        status: vendido ? "vendido" : ""
+      }),
+      redirect: 'follow'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Erro HTTP! Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.error) {
+      throw new Error(data.message);
+    }
+    
     numeroElement.classList.toggle('vendido', vendido);
-  })
-  .catch(error => {
+    
+  } catch (error) {
     console.error("Erro ao atualizar número:", error);
-    alert(`Erro: ${error.message}\n\nRecarregue a página e tente novamente.`);
-    numeroElement.classList.remove('vendido');
-  })
-  .finally(() => {
+    alert(`Erro ao atualizar número ${numero}:\n${error.message}`);
+    numeroElement.classList.toggle('vendido'); // Reverte a mudança visual
+  } finally {
     numeroElement.classList.remove('atualizando');
-  });
+  }
 }
   
   // Faz a requisição inicial para a API
