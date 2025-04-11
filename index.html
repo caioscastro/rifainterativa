@@ -48,10 +48,6 @@
       padding: 20px;
       font-size: 18px;
     }
-    .numero.atualizando {
-      opacity: 0.7;
-      cursor: wait;
-    }
   </style>
 </head>
 <body>
@@ -165,52 +161,41 @@
 
 <script>
   // Substitua esta URL pela URL do seu Google Apps Script
-  const API_URL = 'https://script.google.com/macros/s/AKfycbyzOr1df9iFg4sLnLsYhl6GaQB-OAvCjTQ--9Q61b7qfF3uLAYGWyyX64Q6wU3vbPvMBQ/exec';
-
-async function atualizarStatusNoSheets(numero, vendido) {
-  const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
-  if (!numeroElement) return;
+  const API_URL = "SUA_URL_DO_GOOGLE_APPS_SCRIPT_AQUI";
   
-  numeroElement.classList.add('atualizando');
+  const numeros = document.querySelectorAll('.numero');
+  const loadingElement = document.getElementById('loading');
   
-  try {
-    const url = new URL(API_URL);
-    url.searchParams.set('origin', window.location.origin);
+  // Esconde os números enquanto carrega
+  numeros.forEach(num => num.style.visibility = 'hidden');
+  
+  // Função para atualizar o estado dos números
+  function atualizarNumeros(data) {
+    // Cria um objeto para mapear os números vendidos
+    const vendidosMap = {};
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        numero: numero.toString(),
-        status: vendido ? "vendido" : ""
-      }),
-      redirect: 'follow'
+    data.forEach(item => {
+      if (item.status === "vendido") {
+        vendidosMap[item.numero] = true;
+      }
     });
     
-    if (!response.ok) {
-      throw new Error(`Erro HTTP! Status: ${response.status}`);
-    }
+    // Atualiza a interface
+    numeros.forEach(num => {
+      const valor = num.dataset.valor;
+      if (vendidosMap[valor]) {
+        num.classList.add('vendido');
+      } else {
+        num.classList.remove('vendido');
+      }
+      num.style.visibility = 'visible';
+    });
     
-    const data = await response.json();
-    
-    if (data.error) {
-      throw new Error(data.message);
-    }
-    
-    numeroElement.classList.toggle('vendido', vendido);
-    
-  } catch (error) {
-    console.error("Erro ao atualizar número:", error);
-    alert(`Erro ao atualizar número ${numero}:\n${error.message}`);
-    numeroElement.classList.toggle('vendido'); // Reverte a mudança visual
-  } finally {
-    numeroElement.classList.remove('atualizando');
+    // Esconde o loading
+    loadingElement.style.display = 'none';
   }
-}
   
-  // Faz a requisição inicial para a API
+  // Faz a requisição para a API
   fetch(API_URL)
     .then(response => {
       if (!response.ok) throw new Error("Erro na requisição");
@@ -229,15 +214,6 @@ async function atualizarStatusNoSheets(numero, vendido) {
       });
     });
 
-  // Adiciona evento de clique para marcar/desmarcar como vendido
-  numeros.forEach(num => {
-    num.addEventListener('click', () => {
-      const valor = num.dataset.valor;
-      const vendido = !num.classList.contains('vendido');
-      atualizarStatusNoSheets(valor, vendido);
-    });
-  });
-  
   // Opcional: Atualizar automaticamente a cada 30 segundos
   setInterval(() => {
     fetch(API_URL)
