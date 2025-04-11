@@ -201,39 +201,42 @@
   
   // Função para atualizar o status na planilha
   function atualizarStatusNoSheets(numero, vendido) {
-    const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
-    numeroElement.classList.add('atualizando');
-    
-    fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        numero: numero,
-        status: vendido ? "vendido" : ""
-      })
+  const numeroElement = document.querySelector(`.numero[data-valor="${numero}"]`);
+  if (!numeroElement) return;
+  
+  numeroElement.classList.add('atualizando');
+  
+  // Adiciona um parâmetro origin à URL
+  const url = new URL(API_URL);
+  url.searchParams.append('origin', window.location.origin);
+  
+  fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      numero: numero.toString(),
+      status: vendido ? "vendido" : ""
     })
-    .then(response => {
-      if (!response.ok) throw new Error("Erro na requisição");
-      return response.json();
-    })
-    .then(data => {
-      // Atualiza a interface após a resposta
-      if (vendido) {
-        numeroElement.classList.add('vendido');
-      } else {
-        numeroElement.classList.remove('vendido');
-      }
-    })
-    .catch(error => {
-      console.error("Erro ao atualizar número:", error);
-      alert("Erro ao atualizar o número. Recarregue a página e tente novamente.");
-    })
-    .finally(() => {
-      numeroElement.classList.remove('atualizando');
-    });
-  }
+  })
+  .then(response => {
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return response.json();
+  })
+  .then(data => {
+    if (data.error) throw new Error(data.message);
+    numeroElement.classList.toggle('vendido', vendido);
+  })
+  .catch(error => {
+    console.error("Erro ao atualizar número:", error);
+    numeroElement.classList.toggle('vendido'); // Reverte a mudança visual
+    alert(`Erro ao atualizar número ${numero}: ${error.message}`);
+  })
+  .finally(() => {
+    numeroElement.classList.remove('atualizando');
+  });
+}
   
   // Faz a requisição inicial para a API
   fetch(API_URL)
